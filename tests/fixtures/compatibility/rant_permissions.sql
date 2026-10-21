@@ -1,0 +1,51 @@
+begin;
+insert into auth.users(id,email) values('11111111-1111-4111-8111-111111111111','rant-test-a@example.invalid'),('22222222-2222-4222-8222-222222222222','rant-test-b@example.invalid');
+insert into public.ai_generations(id,user_id,prompt,system_prompt,title,body,language,provider) values('44444444-4444-4444-8444-444444444444','22222222-2222-4222-8222-222222222222','test prompt','test system','Draft','Original draft','en','test');
+insert into public.rants(id,user_id,title,location,body) values('33333333-3333-4333-8333-333333333333','22222222-2222-4222-8222-222222222222','Other owner','NYC','Other body');
+set local role anon;
+select set_config('request.jwt.claims','{"role":"anon"}',true);
+do $$ begin
+ begin insert into public.rant_comments(rant_id,user_id,body) values('33333333-3333-4333-8333-333333333333','11111111-1111-4111-8111-111111111111','forbidden'); raise exception 'anonymous comment allowed'; exception when insufficient_privilege then null; end;
+ begin perform public.toggle_rant_vote('33333333-3333-4333-8333-333333333333',1::smallint); raise exception 'anonymous vote allowed'; exception when insufficient_privilege then null; end;
+ begin insert into public.rants(user_id,title,location,body) values('11111111-1111-4111-8111-111111111111','anon','NYC','forbidden'); raise exception 'anonymous post allowed'; exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}',true);
+do $$ declare n int; begin
+ if (select count(*) from public.ai_generations)<>0 then raise exception 'private generation leaked'; end if;
+ begin insert into public.rants(user_id,title,location,body) values('22222222-2222-4222-8222-222222222222','spoof','NYC','forbidden'); raise exception 'spoofed owner allowed'; exception when insufficient_privilege then null; when raise_exception then if sqlerrm<>'invalid owner' then raise; end if; end;
+ begin insert into public.rants(user_id,title,location,body,generation_id) values('11111111-1111-4111-8111-111111111111','stolen AI','NYC','forbidden','44444444-4444-4444-8444-444444444444'); raise exception 'stolen AI allowed'; exception when raise_exception then if sqlerrm<>'invalid generation' then raise; end if; end;
+ begin insert into public.rants(user_id,title,location,body,image_path) values('11111111-1111-4111-8111-111111111111','stolen photo','NYC','forbidden','22222222-2222-4222-8222-222222222222/a.png'); raise exception 'stolen image allowed'; exception when raise_exception then if sqlerrm<>'invalid image' then raise; end if; end;
+ update public.rants set body='hacked' where id='33333333-3333-4333-8333-333333333333'; get diagnostics n=row_count; if n<>0 then raise exception 'cross-user update allowed'; end if;
+ begin insert into public.rant_votes(rant_id,user_id,value) values('33333333-3333-4333-8333-333333333333','22222222-2222-4222-8222-222222222222',1); raise exception 'spoofed vote allowed'; exception when insufficient_privilege then null; end;
+ begin insert into public.ai_generations(user_id,prompt,system_prompt,title,body,language,provider) values('11111111-1111-4111-8111-111111111111','fake','fake','fake','fake','en','gemini'); raise exception 'fake generation allowed'; exception when insufficient_privilege then null; end;
+end $$;
+insert into public.rants(user_id,title,location,body) values('11111111-1111-4111-8111-111111111111','Own rant','Dorm','Own body');
+insert into public.rant_comments(rant_id,user_id,body) values('33333333-3333-4333-8333-333333333333','11111111-1111-4111-8111-111111111111','Own comment');
+select public.toggle_rant_vote('33333333-3333-4333-8333-333333333333',1::smallint);
+do $$ begin
+ if (select value from public.rant_votes where rant_id='33333333-3333-4333-8333-333333333333')<>1 then raise exception 'vote insert failed'; end if;
+ begin insert into public.rant_votes(rant_id,user_id,value) values('33333333-3333-4333-8333-333333333333','11111111-1111-4111-8111-111111111111',1); raise exception 'duplicate vote allowed'; exception when unique_violation then null; end;
+ begin update public.rant_votes set value=0; raise exception 'invalid vote allowed'; exception when check_violation then null; end;
+end $$;
+select public.toggle_rant_vote('33333333-3333-4333-8333-333333333333',-1::smallint);
+do $$ begin if (select value from public.rant_votes where rant_id='33333333-3333-4333-8333-333333333333')<>-1 then raise exception 'vote switch failed'; end if; end $$;
+select public.toggle_rant_vote('33333333-3333-4333-8333-333333333333',-1::smallint);
+do $$ begin if exists(select 1 from public.rant_votes) then raise exception 'vote undo failed'; end if; end $$;
+reset role;
+set local role service_role;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+do $$ declare token uuid; g uuid; begin
+ token:=public.reserve_ai_generation('11111111-1111-4111-8111-111111111111');
+ begin perform public.reserve_ai_generation('11111111-1111-4111-8111-111111111111'); raise exception 'concurrent quota reservation allowed'; exception when raise_exception then if sqlerrm<>'generationBusy' then raise; end if; end;
+ perform public.release_ai_generation('11111111-1111-4111-8111-111111111111',gen_random_uuid());
+ if not exists(select 1 from public.ai_generation_usage where active_token=token) then raise exception 'stale release cleared reservation'; end if;
+ g:=public.finish_ai_generation('11111111-1111-4111-8111-111111111111',token,'original prompt','system prompt','Title','Body','en','test-model');
+ if not exists(select 1 from public.ai_generations where id=g and prompt='original prompt' and body='Body') then raise exception 'generation persistence failed'; end if;
+ update public.ai_generation_usage set succeeded=10 where user_id='11111111-1111-4111-8111-111111111111';
+ begin perform public.reserve_ai_generation('11111111-1111-4111-8111-111111111111'); raise exception 'daily quota bypassed'; exception when raise_exception then if sqlerrm<>'quotaExceeded' then raise; end if; end;
+end $$;
+reset role;
+rollback;
+select 'PASS: anonymous/cross-user denial, own publication/comment, vote insert-switch-undo, duplicate/value constraints, AI ownership/persistence, quota reservation/stale-release/daily limit. All fixtures rolled back.' as result;

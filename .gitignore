@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.env*
+!.env.example
+.vercel/
+*.tsbuildinfo
+
+/public/setup.html
+/public/permissions.html
