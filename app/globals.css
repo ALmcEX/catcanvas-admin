@@ -948,6 +948,7 @@ label textarea {
   min-height: 100vh;
 }
 .login-art {
+  position: relative;
   background: #25372e;
   color: #e7eddf;
   padding: 42px 55px;

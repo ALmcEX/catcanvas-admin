@@ -1,6 +1,6 @@
 # CatCanvas Admin — proposed design
 
-Status: Approved by the owner; implemented and undergoing deployment verification.
+Status: Approved by the owner; implemented, reviewed and deployed; release verification is recorded separately.
 Date: 2026-10-21 (America/New_York)
 
 ## Purpose and acceptance
