@@ -29,3 +29,15 @@ export function pagination(value: string | undefined) {
   const n = Number(value ?? 0);
   return Number.isSafeInteger(n) && n >= 0 && n <= 10000 ? n : 0;
 }
+
+export function parseMutation(input: Record<string, unknown>) {
+  const action = input.operation;
+  if (action !== "create" && action !== "update" && action !== "delete")
+    throw new Error("Invalid operation.");
+  if (action === "delete") {
+    if (input.confirmation !== "DELETE")
+      throw new Error("Type DELETE to confirm removal of this publication.");
+    return { action, id: uuid(input.id), title: "", body: "", location: "" };
+  }
+  return { action, ...parseMedia(input) };
+}

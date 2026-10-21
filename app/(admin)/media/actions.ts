@@ -1,6 +1,6 @@
 "use server";
 import { requireAdmin } from "@/lib/auth";
-import { parseMedia } from "@/lib/validation";
+import { parseMutation } from "@/lib/validation";
 import { revalidatePath } from "next/cache";
 export type MutationState = { error?: string; success?: string };
 export async function saveMedia(
@@ -9,12 +9,8 @@ export async function saveMedia(
 ): Promise<MutationState> {
   const { client } = await requireAdmin();
   try {
-    const fields = parseMedia(Object.fromEntries(form));
-    const action = form.get("operation");
-    if (!["create", "update", "delete"].includes(String(action)))
-      return { error: "Invalid operation." };
-    if (action === "delete" && form.get("confirmation") !== "DELETE")
-      return { error: "Type DELETE to confirm removal of this publication." };
+    const fields = parseMutation(Object.fromEntries(form));
+    const action = fields.action;
     const { error } = await client.rpc("admin_media_mutate", {
       p_action: action,
       p_id: fields.id,

@@ -14,6 +14,16 @@ export async function requireAdmin() {
     .select("id,first_name,last_name,is_superadmin")
     .eq("id", user.id)
     .maybeSingle();
-  if (profileError || !isAdmin(user, profile)) redirect("/access-denied");
+  const { data: claimsData, error: claimsError } =
+    await client.auth.getClaims();
+  if (
+    claimsError ||
+    profileError ||
+    !isAdmin(
+      { ...user, authenticationMethods: claimsData?.claims?.amr },
+      profile,
+    )
+  )
+    redirect("/access-denied");
   return { client, user, profile: profile! };
 }

@@ -7,3 +7,5 @@ node_modules/
 
 /public/setup.html
 /public/permissions.html
+/public/patch.html
+/public/environment.html

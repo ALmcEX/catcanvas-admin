@@ -1450,3 +1450,20 @@ label textarea {
     font-size: 10px;
   }
 }
+
+.mobile-logout {
+  display: none;
+}
+@media (max-width: 800px) {
+  .mobile-logout {
+    display: block;
+  }
+  .mobile-logout button {
+    font-size: 9px;
+    color: #627458;
+    background: transparent;
+  }
+  .session-status {
+    display: none;
+  }
+}

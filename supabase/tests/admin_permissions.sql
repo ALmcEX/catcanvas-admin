@@ -10,7 +10,7 @@ insert into public.ai_generations(id,user_id,prompt,system_prompt,title,body,lan
 values('ac210000-0000-4000-8000-000000000021','ac210000-0000-4000-8000-000000000002','Fixture prompt','test','Fixture','One','en','gemini','gemini-3.1-flash-lite','meme_caption',
 '{"id":"405658","name":"Grumpy Cat","description":"Test","width":600,"height":600,"imageUrl":"https://imgflip.com/s/meme/Grumpy-Cat.jpg","sourceUrl":"https://imgflip.com/memetemplate/Grumpy-Cat"}',array['One','Two','Three','Four']);
 set local role authenticated;
-select set_config('request.jwt.claims','{"sub":"ac210000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"provider":"google"}}',true);
+select set_config('request.jwt.claims','{"sub":"ac210000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"provider":"google"},"amr":[{"method":"oauth"}]}',true);
 do $$ begin
  begin perform public.admin_overview();raise exception 'FAIL non-admin read';exception when insufficient_privilege then null;end;
  begin perform public.admin_profiles();raise exception 'FAIL non-admin profiles';exception when insufficient_privilege then null;end;
@@ -22,10 +22,11 @@ do $$ begin
  update public.profiles set first_name='Ordinary editor' where id=auth.uid();
  if not exists(select 1 from public.profiles where id=auth.uid() and first_name='Ordinary editor' and not is_superadmin) then raise exception 'FAIL profile compatibility';end if;
 end $$;
-select set_config('request.jwt.claims','{"sub":"ac210000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"provider":"google"}}',true);
+select set_config('request.jwt.claims','{"sub":"ac210000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"provider":"google"},"amr":[{"method":"oauth"}]}',true);
 do $$ declare post uuid;begin
  if not public.is_superadmin() then raise exception 'FAIL administrator';end if;
  perform public.admin_overview();perform public.admin_profiles();perform public.admin_media();perform public.admin_votes();
+ if exists(select 1 from jsonb_array_elements(public.admin_media()->'rows') x where x->>'user_id' is null) then raise exception 'FAIL examples offered as genuine media';end if;
  post:=public.admin_media_mutate('create','ac210000-0000-4000-8000-000000000021','Admin publication','Two','NYC');
  perform public.admin_media_mutate('update','ac210000-0000-4000-8000-000000000021','Updated','Three','');
  if not exists(select 1 from public.rants where id=post and body='Three') then raise exception 'FAIL update';end if;

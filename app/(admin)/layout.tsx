@@ -51,6 +51,9 @@ export default async function AdminLayout({
             <i />
             Google session verified
           </span>
+          <form action={logout} className="mobile-logout">
+            <button aria-label="Sign out">Sign out ↪</button>
+          </form>
         </header>
         <main className="content">{children}</main>
         <footer className="footer">

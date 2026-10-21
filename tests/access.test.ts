@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { isAdmin } from "../lib/access";
-import { parseMedia } from "../lib/validation";
+import { parseMedia, parseMutation } from "../lib/validation";
 const user = {
   id: "10000000-0000-4000-8000-000000000001",
   app_metadata: { provider: "google" },
   identities: [{ provider: "google" }],
+  authenticationMethods: [{ method: "oauth" }],
 };
 describe("admin authorization", () => {
   it("fails closed without an authenticated user", () =>
@@ -50,4 +51,57 @@ describe("media validation", () => {
       title: "Cat",
       body: "",
     }));
+});
+
+describe("mutation intent", () => {
+  it("deletes legacy long publications without editing the content first", () => {
+    expect(
+      parseMutation({
+        operation: "delete",
+        id: user.id,
+        title: "Legacy",
+        body: "x".repeat(3000),
+        confirmation: "DELETE",
+      }),
+    ).toEqual({
+      action: "delete",
+      id: user.id,
+      title: "",
+      body: "",
+      location: "",
+    });
+  });
+  it("requires explicit deletion confirmation", () =>
+    expect(() =>
+      parseMutation({ operation: "delete", id: user.id, confirmation: "" }),
+    ).toThrow());
+  it("validates editable content for update", () =>
+    expect(() =>
+      parseMutation({
+        operation: "update",
+        id: user.id,
+        title: "Title",
+        body: "x".repeat(1001),
+      }),
+    ).toThrow());
+});
+
+describe("Google login session", () => {
+  it("rejects password sessions even for a Google account", () =>
+    expect(
+      isAdmin(
+        { ...user, authenticationMethods: [{ method: "password" }] },
+        { id: user.id, is_superadmin: true },
+      ),
+    ).toBe(false));
+  it("rejects accounts linked to another OAuth identity", () =>
+    expect(
+      isAdmin(
+        {
+          ...user,
+          identities: [{ provider: "google" }, { provider: "github" }],
+        },
+        { id: user.id, is_superadmin: true },
+      ),
+    ).toBe(false));
 });
