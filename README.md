@@ -4,7 +4,7 @@ Independent Next.js admin app for the existing CatCanvas database. Responsive En
 
 ## Features
 - Community counts, 14-day activity, publishing conversion, vote sentiment, media mix, attention ranking and divided opinions (minimum two votes).
-- Searchable, paginated read-only profiles and vote ledger.
+- Searchable, paginated read-only profiles with account emails and a vote ledger. Profile searches support name, email and ID.
 - Full source media CRUD: import existing AI images/captions as private drafts or publications; read and search all sources; edit source metadata, text and image files; permanently delete drafts or published sources with explicit confirmation.
 - Publication deletion cascades votes/comments; unused files are removed through Storage with a persistent retry queue. Shared assets are retained. Previous metadata is recorded in a private audit table. Concurrent publication changes invalidate stale forms.
 - Imports are explicitly labeled and require source attestation. This admin does not call an AI provider or generate fake provider responses.
@@ -16,7 +16,7 @@ A profile trigger rejects ordinary insert/update/upsert privilege escalation whi
 
 ## Setup
 1. Copy .env.example to .env.local with the existing public Supabase URL and anon key.
-2. Apply supabase/migrations/20261021000000_admin.sql followed by supabase/migrations/20261021000001_admin_library_scope.sql and supabase/migrations/20261021000002_media_record_crud.sql to the existing CatCanvas database. The tests/fixtures/base-migrations directory is a historical test baseline, not a production migration directory.
+2. Apply supabase/migrations/20261021000000_admin.sql followed by supabase/migrations/20261021000001_admin_library_scope.sql and supabase/migrations/20261021000002_media_record_crud.sql and supabase/migrations/20261022000000_profile_emails.sql to the existing CatCanvas database. The tests/fixtures/base-migrations directory is a historical test baseline, not a production migration directory.
 3. Enable Google OAuth and add the exact deployment /auth/callback URL to Supabase's redirect allowlist.
 4. Bootstrap the first admin in the database owner's SQL Editor after verifying the email, UUID and Google identity:
 

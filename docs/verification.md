@@ -22,3 +22,8 @@
 Exact source SHAs, commit-specific deployment URLs, live acceptance checks and screenshots are recorded outside the source repository in /Users/alex/Documents/Design for AI/assignment-5-evidence to avoid triggering an extra deployment solely to record its own URL.
 
 The existing creation app remains on its original branch and repository. No billing setting or AI provider budget was changed. No course Submissions form was sent.
+
+## Profiles email update — 2026-10-22
+- Added a read-only EMAIL column sourced from auth.users via the existing Google-superadmin-guarded admin_profiles RPC. Search and pagination totals include email alongside name and UUID. Profiles without an email remain listed with a Not available label. No email is copied into public profile data.
+- The new profile_emails.sql rollback suite passed locally and in live Supabase, covering account email, case-insensitive search, matching totals, missing-email rows and ordinary/anonymous denial. Existing media/admin and six compatibility suites passed.
+- Updated Next.js and eslint-config-next from 16.4.0 to 16.4.2 after a dependency advisory surfaced during build. The production dependency audit reports zero known vulnerabilities after the patch; existing development audit findings remain. All 25 unit tests, lint and production build passed on the patched dependencies.

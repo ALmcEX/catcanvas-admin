@@ -729,6 +729,11 @@ td small {
   font-size: 9px;
   overflow-wrap: anywhere;
 }
+.profile-email {
+  overflow-wrap: anywhere;
+  min-width: 180px;
+  max-width: 260px;
+}
 .member {
   display: flex;
   align-items: center;

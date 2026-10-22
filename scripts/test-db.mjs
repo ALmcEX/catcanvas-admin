@@ -33,22 +33,13 @@ alter default privileges in schema public grant all on tables to anon,authentica
 `);
 for (const f of (await readdir("tests/fixtures/base-migrations")).sort())
   await db.exec(await readFile(`tests/fixtures/base-migrations/${f}`, "utf8"));
-await db.exec(
-  await readFile("supabase/migrations/20261021000000_admin.sql", "utf8"),
+for (const f of (await readdir("supabase/migrations")).sort())
+  await db.exec(await readFile(`supabase/migrations/${f}`, "utf8"));
+console.log(
+  (
+    await db.exec(await readFile("supabase/tests/profile_emails.sql", "utf8"))
+  ).at(-1).rows,
 );
-await db.exec(
-  await readFile(
-    "supabase/migrations/20261021000001_admin_library_scope.sql",
-    "utf8",
-  ),
-);
-const mediaMigration =
-  "supabase/migrations/20261021000002_media_record_crud.sql";
-try {
-  await db.exec(await readFile(mediaMigration, "utf8"));
-} catch (e) {
-  if (e.code !== "ENOENT") throw e;
-}
 console.log(
   (
     await db.exec(await readFile("supabase/tests/media_records.sql", "utf8"))

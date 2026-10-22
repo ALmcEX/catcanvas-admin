@@ -19,7 +19,7 @@ export default async function Profiles({
       <PageHeading
         kicker="THE PEOPLE BEHIND THE PIXELS"
         title="Creative company"
-        description="Meet the people making CatCanvas their own."
+        description="View member profiles and their account email addresses."
       >
         <span className="pill">Read-only directory</span>
       </PageHeading>
@@ -28,7 +28,7 @@ export default async function Profiles({
           <h2>
             Profiles <span className="count">{d.total}</span>
           </h2>
-          <Search query={q} placeholder="Search name or profile ID" />
+          <Search query={q} placeholder="Search name, email or profile ID" />
         </div>
         {d.rows.length ? (
           <div className="table-wrap">
@@ -36,6 +36,7 @@ export default async function Profiles({
               <thead>
                 <tr>
                   <th>MEMBER</th>
+                  <th>EMAIL</th>
                   <th>JOINED</th>
                   <th>CREATIONS</th>
                   <th>VOTES</th>
@@ -60,6 +61,9 @@ export default async function Profiles({
                         </div>
                       </div>
                     </td>
+                    <td className="profile-email">
+                      {r.email || "Not available"}
+                    </td>
                     <td>{date(r.created_at)}</td>
                     <td>{r.generations}</td>
                     <td>{r.votes}</td>
@@ -76,7 +80,7 @@ export default async function Profiles({
         ) : (
           <Empty
             title="No profiles found"
-            description="Try another name or profile ID."
+            description="Try another name, email or profile ID."
           />
         )}
         <Pager page={page} total={d.total} query={q} />
