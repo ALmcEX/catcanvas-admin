@@ -9,3 +9,5 @@ node_modules/
 /public/permissions.html
 /public/patch.html
 /public/environment.html
+
+/public/crud-*.html

@@ -1,5 +1,15 @@
 process.on("uncaughtException", (e) => {
-  console.error(e.message, e.detail || "", e.where || "");
+  console.error(
+    e.message,
+    e.detail || "",
+    e.where || "",
+    e.position || "",
+    e.internalQuery || "",
+    e.query?.slice(
+      Math.max(0, Number(e.position) - 150),
+      Number(e.position) + 150,
+    ) || "",
+  );
   process.exit(1);
 });
 import { PGlite } from "@electric-sql/pglite";
@@ -31,6 +41,18 @@ await db.exec(
     "supabase/migrations/20261021000001_admin_library_scope.sql",
     "utf8",
   ),
+);
+const mediaMigration =
+  "supabase/migrations/20261021000002_media_record_crud.sql";
+try {
+  await db.exec(await readFile(mediaMigration, "utf8"));
+} catch (e) {
+  if (e.code !== "ENOENT") throw e;
+}
+console.log(
+  (
+    await db.exec(await readFile("supabase/tests/media_records.sql", "utf8"))
+  ).at(-1).rows,
 );
 const r = await db.exec(
   await readFile("supabase/tests/admin_permissions.sql", "utf8"),

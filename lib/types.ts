@@ -1,5 +1,7 @@
 export type Media = {
   id: string;
+  version: number;
+  provider: string;
   user_id: string;
   media_type: string;
   purpose: string;

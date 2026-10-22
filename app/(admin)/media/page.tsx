@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { retryCleanup } from "./record-actions";
 /* eslint-disable @next/next/no-img-element */
 import { adminData, date } from "@/lib/data";
 import { requireAdmin } from "@/lib/auth";
@@ -8,7 +10,7 @@ import { MediaEditor } from "@/components/media-editor";
 export default async function MediaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; notice?: string }>;
 }) {
   const p = await searchParams,
     page = pagination(p.page),
@@ -17,6 +19,18 @@ export default async function MediaPage({
     p_query: q,
     p_page: page,
   });
+  const pendingCleanup = await adminData<{ id: string }[]>(
+    "admin_media_pending_cleanup",
+  );
+  const notices: Record<string, string> = {
+    created: "Media record created.",
+    saved: "Media record updated.",
+    deleted:
+      "Media record and its publication removed. Unused files have been cleaned.",
+    cleaned: "Storage cleanup completed.",
+    cleanup:
+      "The database change succeeded, but some storage cleanup is still pending. Retry below.",
+  };
   const { client } = await requireAdmin();
   await Promise.all(
     d.rows.map(async (m) => {
@@ -44,9 +58,11 @@ export default async function MediaPage({
       <PageHeading
         kicker="MADE BY AI. CURATED BY YOU."
         title="The creative archive"
-        description="Explore original generations, publish drafts, and care for the collection."
+        description="Create, inspect, edit and delete AI media records, including unpublished drafts."
       >
-        <span className="pill">Original sources preserved</span>
+        <Link className="button" href="/media/new">
+          + Add AI media
+        </Link>
       </PageHeading>
       <section className="panel">
         <div className="toolbar">
@@ -55,17 +71,36 @@ export default async function MediaPage({
           </h2>
           <Search query={q} placeholder="Search title, prompt or media ID" />
         </div>
+        {p.notice && notices[p.notice] && (
+          <p
+            className={p.notice === "cleanup" ? "notice" : "success"}
+            role="status"
+          >
+            {notices[p.notice]}
+          </p>
+        )}
+        {pendingCleanup.length > 0 && (
+          <div className="notice">
+            <p>
+              Unused file cleanup is pending for {pendingCleanup.length}{" "}
+              changes.
+            </p>
+            <form action={retryCleanup}>
+              <button className="button small">Retry file cleanup</button>
+            </form>
+          </div>
+        )}
         <div className="library-note">
-          <span>↗</span>Create a publication from an existing AI draft below.
-          Editing a caption keeps its original AI choices; removing a
-          publication preserves its source generation.
+          <span>↗</span>Add existing AI-generated images or captions as new
+          records. Edit drafts and publications, or delete a media record and
+          its unused files. Private audit snapshots retain change history.
         </div>
         {d.rows.length ? (
           <div className="media-list">
             {d.rows.map((m) => (
               <article
                 className="media-row"
-                key={`${m.id}-${m.post_id}-${m.body}-${m.title}`}
+                key={`${m.id}-${m.version}-${m.post_id}`}
               >
                 <div className="media-preview">
                   {m.preview ? (
@@ -89,11 +124,17 @@ export default async function MediaPage({
                     </span>
                   </div>
                   <h3>{m.title}</h3>
+                  <span className="pill">
+                    {m.provider === "admin_import"
+                      ? "Imported AI media"
+                      : "AI API source"}
+                    {m.version > 0 ? " · Edited by admin" : ""}
+                  </span>
                   <p className="caption">{m.body || "No public caption"}</p>
                   <details>
                     <summary>Generation details</summary>
                     <dl>
-                      <dt>Original prompt</dt>
+                      <dt>Source prompt (current)</dt>
                       <dd>{m.prompt}</dd>
                       <dt>Model</dt>
                       <dd>{m.model || "Not recorded"}</dd>
