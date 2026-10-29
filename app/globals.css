@@ -1505,3 +1505,27 @@ label textarea {
 .notice form {
   margin-top: 12px;
 }
+
+/* Assignment 7: long navigation and readable configuration records. */
+.sidebar nav { min-height: 0; overflow-y: auto; flex: 1; }
+.sidebar-note { display: none; }
+.create-panel { padding: 22px; margin-bottom: 24px; }
+.create-panel > summary { cursor: pointer; font-weight: 700; }
+.config-form { max-width: 760px; padding-top: 20px; }
+.resource-cell { max-width: 280px; overflow-wrap: anywhere; vertical-align: top; }
+.resource-cell:not(:last-child) { white-space: normal; }
+.record-details { padding: 26px; margin-bottom: 24px; }
+.record-details h2 { margin: 0 0 24px; }
+.detail-grid { display: grid; gap: 18px; }
+.detail-grid > div { display: grid; grid-template-columns: minmax(120px,180px) minmax(0,1fr); gap: 20px; }
+.detail-grid dt { color: var(--muted); text-transform: capitalize; }
+.detail-grid dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.detail-grid pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; }
+.configuration-cards { display: grid; gap: 20px; padding: 24px; }
+.config-card { border: 1px solid #ddd8cf; border-radius: 12px; padding: 22px; }
+.mix-form { max-width: 420px; margin-top: 20px; }
+@media(max-width: 760px) {
+ .detail-grid > div { grid-template-columns: 1fr; gap: 6px; }
+ .record-details { padding: 18px; }
+ .sidebar nav { flex: none; overflow: auto; }
+}

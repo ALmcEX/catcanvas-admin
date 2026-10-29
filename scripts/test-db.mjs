@@ -45,6 +45,7 @@ console.log(
     await db.exec(await readFile("supabase/tests/media_records.sql", "utf8"))
   ).at(-1).rows,
 );
+console.log((await db.exec(await readFile("supabase/tests/observability.sql", "utf8"))).at(-1).rows);
 const r = await db.exec(
   await readFile("supabase/tests/admin_permissions.sql", "utf8"),
 );
