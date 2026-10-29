@@ -54,6 +54,8 @@ do $$begin
  begin insert into auth.users(id,email) values('aa770000-0000-4000-8000-000000000006','new@blocked.test');raise exception 'FAIL blocked signup';exception when check_violation then null;end;
  if not exists(select 1 from public.profiles where id='aa770000-0000-4000-8000-000000000003') then raise exception 'FAIL profile trigger';end if;
 end $$;
+insert into public.ai_generations(id,user_id,prompt,system_prompt,title,body,language,provider,model,media_type,image_path,mime_type,cat_breed,art_style) values
+('aa770000-0000-4000-8000-000000000021','aa770000-0000-4000-8000-000000000002','Fixture cat','Fixture system','Fixture image','Fixture body','en','gemini','gemini-3.1-flash-lite-image','image','aa770000-0000-4000-8000-000000000002/fixture.png','image/png','orange','photo');
 set local role service_role;
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 do $$declare r jsonb; rid uuid; gid uuid;begin
@@ -64,6 +66,11 @@ do $$declare r jsonb; rid uuid; gid uuid;begin
  perform public.finish_generation_request(rid,null,'saveFailed');
  if (select count(*) from public.llm_responses where request_id=rid)<>1 then raise exception 'FAIL duplicate response';end if;
  if (select status from public.generation_requests where id=rid)<>'failed' then raise exception 'FAIL request failure';end if;
+ r:=public.begin_generation_request('aa770000-0000-4000-8000-000000000002','cat_image','A cat','{}');rid:=(r->>'id')::uuid;
+ perform public.finish_generation_request(rid,'aa770000-0000-4000-8000-000000000021',null);
+ if (select status from public.generation_requests where id=rid)<>'succeeded' then raise exception 'FAIL successful media link';end if;
+ r:=public.begin_generation_request('aa770000-0000-4000-8000-000000000001','cat_image','A cat','{}');rid:=(r->>'id')::uuid;
+ begin perform public.finish_generation_request(rid,'aa770000-0000-4000-8000-000000000021',null);raise exception 'FAIL cross-owner media link';exception when invalid_parameter_value then null;end;
  begin perform public.record_llm_response(rid,'{"api_key":"secret"}');raise exception 'FAIL secret payload';exception when invalid_parameter_value then null;end;
  begin perform public.finish_generation_request(rid,null,null);raise exception 'FAIL invalid success';exception when invalid_parameter_value then null;end;
 end $$;
