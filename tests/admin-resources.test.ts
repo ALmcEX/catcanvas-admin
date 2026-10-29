@@ -90,3 +90,16 @@ describe("configuration boundaries", () => {
     expect(() => parseMix({ id, version: "0", weight: "101" })).toThrow();
   });
 });
+
+it("links model foreign keys while rendering provider model identifiers as text", async () => {
+  const { relationHref } = await import("../lib/admin-resources");
+  expect(
+    relationHref("llm-models", "model_id", "gemini-3.1-flash-lite"),
+  ).toBeNull();
+  expect(relationHref("prompt-chain-steps", "model_id", id)).toBe(
+    `/llm-models/${id}`,
+  );
+  expect(relationHref("llm-models", "provider_id", id)).toBe(
+    `/llm-providers/${id}`,
+  );
+});

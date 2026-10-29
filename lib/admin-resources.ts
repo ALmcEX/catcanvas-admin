@@ -265,3 +265,29 @@ export function parseMix(input: Record<string, unknown>) {
     enabled: input.enabled === "on",
   };
 }
+
+export function relationHref(
+  resource: string,
+  key: string,
+  value: unknown,
+): string | null {
+  if (
+    typeof value !== "string" ||
+    (resource === "llm-models" && key === "model_id")
+  )
+    return null;
+  const targets: Record<string, string> = {
+    chain_id: "prompt-chains",
+    request_id: "generation-requests",
+    step_id: "prompt-chain-steps",
+    model_id: "llm-models",
+    provider_id: "llm-providers",
+  };
+  const target = targets[key];
+  if (!target) return null;
+  try {
+    return `/${target}/${uuid(value)}`;
+  } catch {
+    return null;
+  }
+}

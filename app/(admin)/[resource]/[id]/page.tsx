@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { adminData } from "@/lib/data";
-import { getResource, type AdminRow } from "@/lib/admin-resources";
+import {
+  getResource,
+  relationHref,
+  type AdminRow,
+} from "@/lib/admin-resources";
 import { referenceOptions } from "@/lib/admin-reference-options";
 import {
   ConfigurationForm,
@@ -36,13 +40,6 @@ export default async function ResourceDetail({
           p_query: id,
         })
       : null;
-  const links: Record<string, string> = {
-    chain_id: "prompt-chains",
-    request_id: "generation-requests",
-    step_id: "prompt-chain-steps",
-    model_id: "llm-models",
-    provider_id: "llm-providers",
-  };
   return (
     <>
       <PageHeading
@@ -63,8 +60,10 @@ export default async function ResourceDetail({
               <dd>
                 {value == null ? (
                   "Not recorded"
-                ) : links[key] && typeof value === "string" ? (
-                  <Link href={`/${links[key]}/${value}`}>{value} ↗</Link>
+                ) : relationHref(resource, key, value) ? (
+                  <Link href={relationHref(resource, key, value)!}>
+                    {String(value)} ↗
+                  </Link>
                 ) : key === "generation_id" && typeof value === "string" ? (
                   <Link href={`/media?q=${value}`}>View generated media ↗</Link>
                 ) : typeof value === "object" ? (
